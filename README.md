@@ -39,14 +39,13 @@ python simulator/mujoco_to_nerfstudio.py --radius 1 --scene_name my_scene --num_
 The format of the camera parameters required by [`nerfstudio`](https://docs.nerf.studio/) can be found in the [NeRFStudio documentation](https://docs.nerf.studio/quickstart/data_conventions.html). Please note that `nerfstudio` supports multiple commonly-used formats (e.g. `Blender`, `ScanNet`, `ARKitScenes`, `D-NeRF`). For details on available data parsers, check the [DataParser documentation](https://docs.nerf.studio/developer_guides/pipelines/dataparsers.html#dataparsers). 
 
 ### Scene reconstruction
-- `reconstruction.py`: This script reconstructs a scene from the RGB images and corresponding `transforms.json` file located in `data/scenes/<SCENE_NAME>`. It uses the  [`nerfstudio`](https://docs.nerf.studio/) framework, which is open-source and licensed under [Apache License 2.0](https://github.com/nerfstudio-project/nerfstudio/blob/main/LICENSE). 
+`reconstruction.py`: This script reconstructs a scene from the RGB images and corresponding `transforms.json` file located in `data/scenes/<SCENE_NAME>`. It uses the  [`nerfstudio`](https://docs.nerf.studio/) framework, which is open-source and licensed under [Apache License 2.0](https://github.com/nerfstudio-project/nerfstudio/blob/main/LICENSE). 
 The reconstruction process uses the object names specified in the `args.text_prompt` (format: "<OBJECT>.<OBJECT>.") to segment and reconstruct thee desired object. The RGB images are segmented using [GroundingDINOv2](https://github.com/IDEA-Research/GroundingDINO) + [SAMv2](https://github.com/facebookresearch/sam2). These resulting segmentation masks are applied to depth maps predicted by NeRF, allowing for the extraction of per-object point clouds. The extracted point clouds are then reconstructed into meshes using [Poisson Surface Reconstruction](https://www.open3d.org/docs/latest/tutorial/Advanced/surface_reconstruction.html#Poisson-surface-reconstruction). Since the point clouds are already in their correct world-frame poses, no further pose optimisation is required.
 
 Example of usage:
 ```
 python reconstruction.py --text_prompt banana.mug. --data_dir 'data/' --end_idx 1
 ``` 
-
 
 # Installation
 In this environment we use:
