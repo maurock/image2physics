@@ -28,7 +28,7 @@ root
 ```
   Please [check here](#camera-parameters) for more information on `transforms.json`.
 ### Data generation
- If you don't have RGB images and camera parameters, you can generate synthetic data using MuJoCo:
+ If you don't have RGB images and camera parameters, you can generate synthetic data using [MuJoCo](https://mujoco.readthedocs.io/en/stable/overview.html):
   - `simulator.mujoco_to_nerfstudio.py`: This scripts creates multi-view RGB images and corresponding camera parameters from a pre-defined MuJoCo scene. The generated data is stored in `data/scenes/<SCENE_NAME>`. The result consists in RGB images (`data/scenes/<SCENE_NAME>/images/`) and camera parameters (`transforms.json`), which is automatically parsed into the format required by `nerfstudio`. The required MuJoCo XML scene definitions are located in `data/mj_models`, while assets are stored in `data/assets`.
 
 Example of usage with the Demo scene available in this repository:
@@ -44,8 +44,9 @@ The reconstruction process uses the object names specified in the `args.text_pro
 
 Example of usage:
 ```
-python reconstruct.py --text_prompt banana.mug. --data_dir 'data/' --end_idx 1
+python reconstruction.py --text_prompt banana.mug. --data_dir 'data/' --end_idx 1
 ``` 
+
 
 # Installation
 In this environment we use:
