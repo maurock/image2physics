@@ -1,6 +1,6 @@
 # Image2Real
 
-This repository provides a framework to reconstruct individual 3D meshes of a scene using user prompts and multi-view RGB images. It builds upon the ideas presented in the NeRF2Physics paper (MIT License). The current codebase has been _substantially expanded and modified_, retaining only two scripts from the original repository (`utils.py` and `arguments.py`).
+This repository provides a framework to reconstruct individual 3D meshes of a scene using user prompts and multi-view RGB images. It builds upon the ideas presented in the [NeRF2Physics paper](https://ajzhai.github.io/NeRF2Physics/) (MIT License). The current codebase has been _substantially expanded and modified_, retaining only two scripts from the original repository (`utils.py` and `arguments.py`).
 
 # Table of Contents
 - [Overview](#overview)
