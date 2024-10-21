@@ -1,0 +1,36 @@
+<mujoco model="scene">
+    <!-- Plane with checkerboard texture -->
+    <asset>
+        <texture name="texplane" type="2d" builtin="checker" rgb1=".4 .6 .8" rgb2=".1 0.15 0.2"
+            width="512" height="512" mark="cross" markrgb=".8 .8 .8"/>
+        <material name="matplane" reflectance="0.01" texture="texplane" texrepeat="1 1" texuniform="true"/>
+    </asset>
+    <!-- White sky -->
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1="1 1 1" rgb2="1 1 1" width="32" height="512"/>
+    </asset>
+    <!-- Meshes -->
+    <asset>
+        <texture name="banana" file="../assets/banana/banana.png" type="2d"/>
+        <material name="banana" texture="banana"/>
+        <mesh name="banana" file="../assets/banana/banana.obj" scale="1 1 1"/>
+    </asset>
+    <asset>
+        <texture name="mug" file="../assets/mug/mug.png" type="2d"/>
+        <material name="mug" texture="mug"/>
+        <mesh name="mug" file="../assets/mug/mug.obj" scale="1 1 1"/>
+    </asset>
+    <visual>
+        <headlight ambient="1 1 1" diffuse="1 1 1" specular="1 1 1"/>
+        <global offwidth="1024" offheight="1024"/>
+    </visual>
+    <worldbody>
+        <geom name="ground" type="plane" size="2 2 1" pos="0 0 0" quat="1 0 0 0" material="matplane"/>
+        <body name="banana" pos="-0.2 0 0">
+            <geom type="mesh" mesh="banana" material="banana"/>
+        </body>
+        <body name="mug" pos="0.2 0 0">
+            <geom type="mesh" mesh="mug" material="mug"/>
+        </body>
+    </worldbody>
+</mujoco>
