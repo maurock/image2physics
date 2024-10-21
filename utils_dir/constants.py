@@ -1,7 +1,6 @@
 import enum
 import os
 import data
-import models
 
 class Resolution(enum.Enum):
   """Common resolutions defined as (H, W)"""
@@ -22,7 +21,4 @@ class Paths(enum.Enum):
   SCENES = os.path.join(
     os.path.dirname(data.__file__), 
     'scenes'
-  )
-  MODELS = os.path.join(
-    os.path.dirname(models.__file__)
   )
