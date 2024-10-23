@@ -167,7 +167,6 @@ cython_debug/
 
 # Checkpoints
 models/grounded-sam2/*.pt
-models/
 outputs/
 data/scenes/
 

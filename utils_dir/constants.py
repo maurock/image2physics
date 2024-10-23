@@ -22,3 +22,6 @@ class Paths(enum.Enum):
     os.path.dirname(data.__file__), 
     'scenes'
   )
+  MODELS = os.path.join(
+    os.path.dirname(models.__file__)
+  )
