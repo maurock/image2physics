@@ -1,6 +1,7 @@
 import enum
 import os
 import data
+import models
 
 class Resolution(enum.Enum):
   """Common resolutions defined as (H, W)"""
