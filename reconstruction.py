@@ -120,7 +120,7 @@ class PointCloudFilter:
         valid_points2D, valid_points3D = points2D[in_bounds], np.asarray(pcd.points)[in_bounds]
         valid_normals = np.asarray(pcd.normals)[in_bounds]
         valid_dists = dists[in_bounds]
-	valid_colors = np.asarray(pcd.colors)[in_bounds]
+       	valid_colors = np.asarray(pcd.colors)[in_bounds]
         return valid_points2D, valid_points3D, valid_dists, valid_normals, valid_colors 
     
     def filter_by_occlusion(self, depth, points2D, points3D, dists, normals, colors):
@@ -152,7 +152,7 @@ class MeshExtractor:
                             corresponding 3D mesh, and point cloud."""
         console.print('Extracting meshes..', style='bold green')
         label_dict = defaultdict(lambda: defaultdict(list))
-	#label_pointcloud = defaultdict(list)
+       	#label_pointcloud = defaultdict(list)
         #label_normals = defaultdict(list)
         for camera in self.cameras:
             for idx, mask in enumerate(camera.masks):
@@ -162,9 +162,9 @@ class MeshExtractor:
                 pts2D, pts3D, normals, colors = self.point_cloud_filter.filter_by_occlusion(camera.depth, pts2D, pts3D, dists, normals, colors)
                 pts2D, pts3D, normals, colors = self.point_cloud_filter.filter_by_mask(pts2D, pts3D, mask, normals, colors)
                 label_dict[label]['pointcloud'].extend(pts3D)
-		label_dict[label]['normals'].extend(normals)
-		label_dict[label]['colors'].extend(colors)
-		#label_pointcloud[label].extend(pts3D)
+                label_dict[label]['normals'].extend(normals)
+                label_dict[label]['colors'].extend(colors)
+                #label_pointcloud[label].extend(pts3D)
                 #label_normals[label].extend(normals)
         
         # Unique filtering and mesh creation
@@ -172,7 +172,7 @@ class MeshExtractor:
         for label in label_pointcloud.keys():
             points, indices = np.unique(np.array(label_dict[label]['pointcloud']), return_index=True, axis=0)
             normals = np.array(label_dict[label]['normals'])[indices]
-	    colors = np.array(label_dict[label]['colors'])[indices]
+            colors = np.array(label_dict[label]['colors'])[indices]
             mesh = self.create_mesh(points, normals)
             results.append(Struct3D(label, mesh, points, colors))
 
