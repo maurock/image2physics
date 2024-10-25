@@ -144,7 +144,7 @@ class MeshExtractor:
         self.occ_thr = occ_thr * self.scale
         self.point_cloud_filter = PointCloudFilter(self.occ_thr)
 
-    def extract(self):
+    def extract(self, nb_neighbors=20, std_ratio=10.):
         """Extracts 3D meshes for each label by processing the camera images and masks.
 
         Returns:
@@ -152,8 +152,6 @@ class MeshExtractor:
                             corresponding 3D mesh, and point cloud."""
         console.print('Extracting meshes..', style='bold green')
         label_dict = defaultdict(lambda: defaultdict(list))
-       	#label_pointcloud = defaultdict(list)
-        #label_normals = defaultdict(list)
         for camera in self.cameras:
             for idx, mask in enumerate(camera.masks):
                 label = camera.labels[idx]
@@ -164,26 +162,25 @@ class MeshExtractor:
                 label_dict[label]['pointcloud'].extend(pts3D)
                 label_dict[label]['normals'].extend(normals)
                 label_dict[label]['colors'].extend(colors)
-                #label_pointcloud[label].extend(pts3D)
-                #label_normals[label].extend(normals)
         
         # Unique filtering and mesh creation
         results = []
-        for label in label_pointcloud.keys():
+        for label in label_dict.keys():
             points, indices = np.unique(np.array(label_dict[label]['pointcloud']), return_index=True, axis=0)
             normals = np.array(label_dict[label]['normals'])[indices]
             colors = np.array(label_dict[label]['colors'])[indices]
-            mesh = self.create_mesh(points, normals)
+            mesh = self.create_mesh(points, normals, colors, nb_neighbors, std_ratio)
             results.append(Struct3D(label, mesh, points, colors))
 
         return results
 
     @staticmethod
-    def create_mesh(point_cloud, normals=None):
+    def create_mesh(point_cloud, normals, colors, nb_neighbors, std_ratio):
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(point_cloud)
         pcd.normals = o3d.utility.Vector3dVector(normals)
-        pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=20, std_ratio=10.)
+        pcd.colors = o3d.utility.Vector3dVector(colors)
+        pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors, std_ratio=std_ratio)
         mesh, densities = o3d.geometry.TriangleMesh.create_from_point_cloud_poisson(pcd, depth=9)
         vertices_to_remove = densities < np.quantile(densities, 0)
         mesh.remove_vertices_by_mask(vertices_to_remove)
