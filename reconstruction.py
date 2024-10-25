@@ -36,7 +36,7 @@ class Struct3D:
     label: str = None
     mesh: o3d.geometry.TriangleMesh = None
     point_cloud: np.ndarray = None
-
+    colors: np.ndarray = None
 
 console = Console()
 
@@ -120,17 +120,18 @@ class PointCloudFilter:
         valid_points2D, valid_points3D = points2D[in_bounds], np.asarray(pcd.points)[in_bounds]
         valid_normals = np.asarray(pcd.normals)[in_bounds]
         valid_dists = dists[in_bounds]
-        return valid_points2D, valid_points3D, valid_dists, valid_normals 
+	valid_colors = np.asarray(pcd.colors)[in_bounds]
+        return valid_points2D, valid_points3D, valid_dists, valid_normals, valid_colors 
     
-    def filter_by_occlusion(self, depth, points2D, points3D, dists, normals):
+    def filter_by_occlusion(self, depth, points2D, points3D, dists, normals, colors):
         is_occluded = dists > depth[points2D[:, 1].astype(int), points2D[:, 0].astype(int)] + self.occ_thr
-        return points2D[~is_occluded], points3D[~is_occluded], normals[~is_occluded]
+        return points2D[~is_occluded], points3D[~is_occluded], normals[~is_occluded], colors[~is_occluded]
 
-    def filter_by_mask(self, points2D, points3D, mask, normals):
+    def filter_by_mask(self, points2D, points3D, mask, normals, colors):
         x_coords = points2D[:, 0].astype(int)
         y_coords = points2D[:, 1].astype(int)
         mask_values = mask[y_coords, x_coords]
-        return points2D[mask_values == 1], points3D[mask_values == 1], normals[mask_values == 1]
+        return points2D[mask_values == 1], points3D[mask_values == 1], normals[mask_values == 1], colors[mask_values == 1]
 
 
 class MeshExtractor:
@@ -150,25 +151,30 @@ class MeshExtractor:
             results (list): A list of `Struct3D` objects, where each object contains the label,
                             corresponding 3D mesh, and point cloud."""
         console.print('Extracting meshes..', style='bold green')
-        label_pointcloud = defaultdict(list)
-        label_normals = defaultdict(list)
+        label_dict = defaultdict(lambda: defaultdict(list))
+	#label_pointcloud = defaultdict(list)
+        #label_normals = defaultdict(list)
         for camera in self.cameras:
             for idx, mask in enumerate(camera.masks):
                 label = camera.labels[idx]
                 projected_2D, dists = project_3d_to_2d(np.asarray(self.pcd.points), camera.w2c, camera.K, return_dists=True)
-                pts2D, pts3D, dists, normals = self.point_cloud_filter.filter_by_bounds(projected_2D, self.pcd, mask, dists)
-                pts2D, pts3D, normals = self.point_cloud_filter.filter_by_occlusion(camera.depth, pts2D, pts3D, dists, normals)
-                pts2D, pts3D, normals = self.point_cloud_filter.filter_by_mask(pts2D, pts3D, mask, normals)
-                label_pointcloud[label].extend(pts3D)
-                label_normals[label].extend(normals)
+                pts2D, pts3D, dists, normals, colors = self.point_cloud_filter.filter_by_bounds(projected_2D, self.pcd, mask, dists)
+                pts2D, pts3D, normals, colors = self.point_cloud_filter.filter_by_occlusion(camera.depth, pts2D, pts3D, dists, normals, colors)
+                pts2D, pts3D, normals, colors = self.point_cloud_filter.filter_by_mask(pts2D, pts3D, mask, normals, colors)
+                label_dict[label]['pointcloud'].extend(pts3D)
+		label_dict[label]['normals'].extend(normals)
+		label_dict[label]['colors'].extend(colors)
+		#label_pointcloud[label].extend(pts3D)
+                #label_normals[label].extend(normals)
         
         # Unique filtering and mesh creation
         results = []
         for label in label_pointcloud.keys():
-            points, indices = np.unique(np.array(label_pointcloud[label]), return_index=True, axis=0)
-            normals = np.array(label_normals[label])[indices]
+            points, indices = np.unique(np.array(label_dict[label]['pointcloud']), return_index=True, axis=0)
+            normals = np.array(label_dict[label]['normals'])[indices]
+	    colors = np.array(label_dict[label]['colors'])[indices]
             mesh = self.create_mesh(points, normals)
-            results.append(Struct3D(label, mesh, points))
+            results.append(Struct3D(label, mesh, points, colors))
 
         return results
 
