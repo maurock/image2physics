@@ -6,6 +6,7 @@ import mujoco
 from typing import Dict
 import json
 from PIL import Image
+from dm_control import mjcf
 
 
 def load_model(model_name: str) -> mujoco.MjModel:
@@ -37,6 +38,27 @@ def append_cameras_to_xml(xml_model: str, xml_cameras: str) -> str:
     new_xml = xml_model[:insert_point] + cameras_xml + xml_model[insert_point:]
 
     return new_xml
+
+
+def add_cameras_to_mjcf(
+    mjcf_root: mjcf.RootElement,
+    num_cameras: int,
+    radius: int
+) -> mujoco.MjModel:
+    sampled_points = fibonacci_hemisphere_samples(num_cameras, radius)
+
+    for i in range(num_cameras):
+        xyaxes = compute_xyaxes(sampled_points[i])
+        mjcf_root.worldbody.add(
+            'camera',
+            name=f'cam{i:02}',
+            pos=(sampled_points[i][0], sampled_points[i][1], sampled_points[i][2]),
+            xyaxes=f'{" ".join(map(str, xyaxes))}',
+            resolution='512 512'
+        )
+    
+    return mjcf_root
+
 
 def load_model_with_cameras(
     model_name: str,
@@ -129,7 +151,7 @@ def save_transforms_json(transforms: Dict, scene_name: str) -> None:
     print(f"Transforms saved to '{transforms_path}'")
 
 
-def compute_xyaxes(cam_position: np.ndarray, cam_lookat: np.ndarray, up_vector=np.array([0, 0, -1])):
+def compute_xyaxes(cam_position: list, cam_lookat: list=[0., 0., 0.], up_vector: list=[0, 0, -1]):
     """
     Compute the xyaxes parameter for a camera in MuJoCo.
     
@@ -175,25 +197,28 @@ def fibonacci_hemisphere_samples(num_points, radius=1):
     y = radius * np.sin(theta) * np.sin(phi)
     z = radius * np.cos(phi)
 
-    return x, y, z
+    sampled_points = np.stack([x, y, z], axis=1)
+
+    return sampled_points
 
 
-def render_images(renderer, data, num_cameras, scene_dir):
+def render_images(model, data, num_cameras, scene_dir, width=512, height=512):
     """Render images using the renderer and save them."""
-    frames = []
-    for i in range(num_cameras):
-        frame = {}
-        camera_name = f'cam{i}'
+    with mujoco.Renderer(model, width=width, height=height) as renderer:
+        frames = []
+        for i in range(num_cameras):
+            frame = {}
+            camera_name = f'cam{i:02}'
 
-        # Render image
-        renderer.update_scene(data, camera=camera_name)
-        image = renderer.render()
-        image_path = os.path.join(scene_dir, 'images', f'{camera_name}.png')
-        Image.fromarray(image).save(image_path)
+            # Render image
+            renderer.update_scene(data, camera=camera_name)
+            image = renderer.render()
+            image_path = os.path.join(scene_dir, 'images', f'{camera_name}.png')
+            Image.fromarray(image).save(image_path)
 
-        # Add camera frame data
-        frame['file_path'] = image_path
-        frame['transform_matrix'] = extract_camera_extrinsics(data, i).tolist()
-        frames.append(frame)
+            # Add camera frame data
+            frame['file_path'] = image_path
+            frame['transform_matrix'] = extract_camera_extrinsics(data, i).tolist()
+            frames.append(frame)
 
     return frames

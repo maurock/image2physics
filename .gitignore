@@ -171,3 +171,5 @@ outputs/
 data/scenes/
 
 .DS_Store
+
+utils_dir/ycb-tools/models

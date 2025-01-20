@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import open3d as o3d
 from rich.console import Console
 from plotly import graph_objs as go
+import yaml
 
 @dataclass
 class Camera:
@@ -220,91 +221,64 @@ if __name__ == '__main__':
 
     scenes_dir = os.path.join(args.data_dir, 'scenes')
     scenes = get_scenes_list(args)
-
-
+ 
     for scene in scenes: 
         base_dir = os.path.join(scenes_dir, scene, 'ns')
 
+        yaml_file = os.path.join(scenes_dir, 'config.yml')
+        with open(yaml_file, 'r') as f:
+            config = yaml.safe_load(f)
+            print(config)
+        
+        exit()
+    
+
         # Calling ns-train
-        result = subprocess.run([
-            'ns-train', 'nerfacto', 
-            '--data', os.path.join(scenes_dir, scene),
-            '--output_dir', base_dir,
-            '--vis', args.vis_mode,
-            '--project_name', args.project_name,
-            '--experiment_name', scene,
-            '--max_num_iterations', str(args.training_iters),
-            '--pipeline.model.background-color', 'white',   # random
-            '--pipeline.model.camera-optimizer.mode', 'off',
-            '--pipeline.model.proposal-initial-sampler', 'uniform',
-            '--pipeline.model.near-plane', str(args.near_plane),
-            '--pipeline.model.far-plane', str(args.far_plane),
-            '--steps-per-eval-image', '10000',
-        ])
+        # result = subprocess.run([
+        #     'ns-train', 'nerfacto', 
+        #     '--load-config', os.path.join(scenes_dir, 'config.yml'),
+        #     '--data', os.path.join(scenes_dir, scene),
+        #     '--output_dir', base_dir,
+        #     '--vis', args.vis_mode,
+        #     '--project_name', args.project_name,
+        #     '--experiment_name', scene,
+        #     '--max_num_iterations', str(args.training_iters),
+        #     '--pipeline.model.background-color', 'white',   # random
+        #     '--pipeline.model.camera-optimizer.mode', 'off',
+        #     '--pipeline.model.proposal-initial-sampler', 'uniform',
+        #     '--pipeline.model.near-plane', str(args.near_plane),
+        #     '--pipeline.model.far-plane', str(args.far_plane),
+        #     '--steps-per-eval-image', '10000',
+        #     '--viewer.quit-on-train-completion', 'True',
+        #     '--pipeline.model.predict-normals', 'True',
+        # ])
 
         ns_dir = get_last_file_in_folder(os.path.join(base_dir, '%s/nerfacto' % scene))
 
         # Copying dataparser_transforms (contains scale)
-        result = subprocess.run([
-            'scp', '-r', 
-            os.path.join(ns_dir, 'dataparser_transforms.json'), 
-            os.path.join(base_dir, 'dataparser_transforms.json')
-        ])
+        # result = subprocess.run([
+        #     'scp', '-r', 
+        #     os.path.join(ns_dir, 'dataparser_transforms.json'), 
+        #     os.path.join(base_dir, 'dataparser_transforms.json')
+        # ])      
 
-        half_bbox_size = args.bbox_size / 2
-
-        print('Exporting pointcloud..')
-        pcd_exporter = ExportPointCloud(
-            load_config=Path(os.path.join(ns_dir, 'config.yml')), 
-            output_dir=Path(base_dir), 
-            num_points=args.num_points, 
-            remove_outliers=True, 
-            normal_method='open3d', 
-            obb_center=(0.0, 0.0, 0.0),
-            obb_rotation=(0.0, 0.0, 0.0),
-            obb_scale=(2., 2., 2.)
-        )
-        pcd_exporter.main()
+        # export_mesh = subprocess.run([
+        #     'ns-export', 'poisson',
+        #     '--load-config', os.path.join(ns_dir, 'config.yml'),
+        #     '--output-dir', os.path.join(base_dir, 'meshes')
+        # ])
 
         # Calling ns-render 
-        result = subprocess.run([
-            'ns-render', 'dataset',
+        # result = subprocess.run([
+        #     'ns-render', 'dataset',
+        #     '--load-config', os.path.join(ns_dir, 'config.yml'),
+        #     '--output-path', os.path.join(base_dir, 'renders'),
+        #     '--rendered-output-names', 'rgb', 'gt-rgb',
+        #     '--split', 'test',
+        # ])
+
+        evals = subprocess.run([
+            'ns-eval', 
             '--load-config', os.path.join(ns_dir, 'config.yml'),
-            '--output-path', os.path.join(base_dir, 'renders'),
-            '--rendered-output-names', 'raw-depth',
-            '--split', 'train+test',
+            '--output-path', os.path.join(ns_dir, 'output.json')
         ])
-
-        # Collect all depths in one folder
-        os.makedirs(os.path.join(base_dir, 'renders', 'depth'), exist_ok=True)
-        move_files_to_folder(os.path.join(base_dir, 'renders', 'test', 'raw-depth'), os.path.join(base_dir, 'renders', 'depth'))
-        move_files_to_folder(os.path.join(base_dir, 'renders', 'train', 'raw-depth'), os.path.join(base_dir, 'renders', 'depth'))
-
-        # Set up directories and file paths
-        pcd_file = os.path.join(base_dir, 'point_cloud.ply')
-        dt_file = os.path.join(base_dir, 'dataparser_transforms.json')
-
-        segmentation = Segmentation(
-            grounding_model_id='IDEA-Research/grounding-dino-tiny',
-            sam2_checkpoint=os.path.join(Paths.MODELS.value, "grounded-sam2", "sam2_hiera_large.pt"),
-            sam2_config="sam2_hiera_l.yaml"
-        )
-
-        # Load pointcloud
-        console.print('Loading point cloud..', style='bold green')
-        full_pcd = load_ns_point_cloud(pcd_file, dt_file)
-        
-        camera_processor = CameraProcessor(
-            os.path.join(scenes_dir, scene),
-            segmentation_model=segmentation
-        )
-        cameras = camera_processor.create_cameras(args.text_prompt)
-
-        # Mesh extraction
-        mesh_extractor = MeshExtractor(full_pcd, cameras, args.occ_thr, dt_file)
-        results = mesh_extractor.extract()
-
-        # Save meshes
-        for struct3D in results:
-            os.makedirs(os.path.join(scenes_dir, scene, 'meshes'), exist_ok=True)
-            o3d.io.write_triangle_mesh(os.path.join(scenes_dir, scene, 'meshes', f'{struct3D.label}.ply'), struct3D.mesh)

@@ -29,7 +29,7 @@ def get_args():
                         help='near plane for ray sampling (default: 0.4)')
     parser.add_argument('--far_plane', type=float, default=6.0,
                         help='far plane for ray sampling (default: 6.0)')
-    parser.add_argument('--vis_mode', type=str, default='wandb',
+    parser.add_argument('--vis_mode', type=str, default='viewer',
                         help='nerfstudio visualization mode (default: wandb)')
     parser.add_argument('--project_name', type=str, default='NeRF2Physics',
                         help='project name used by wandb (default: NeRF2Physics)')

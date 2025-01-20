@@ -1,0 +1,3 @@
+[submodule "utils_dir/ycb_tools"]
+	path = utils_dir/ycb_tools
+	url = https://github.com/sea-bass/ycb-tools.git

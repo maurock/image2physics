@@ -1,3 +1,15 @@
 [build-system]
 requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "image2physics"
+version = "0.1.0"
+description = "Add physics to 3D representations"
+license = { text = "MIT" }  
+
+[tool.setuptools]
+package-dir = {'' = '.'}  # This tells setuptools the package is in the current directory
+
+[tool.setuptools.packages.find]
+where = ['.']
